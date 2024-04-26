@@ -4,12 +4,12 @@ This repository contains the template code for the TU/e course JBG050 Data Chall
 Please read this document carefully as it has been filled out with important information.
 
 ## How to clone the project
-1. Copy the following HTTPS key: https://gitlab.tue.nl/20224113/data-challenge-2-group-15.git
+1. Copy the following HTTPS key: https://github.com/stiverthijmen163/DC2-Group-15.git
 2. Make a folder in which you want to store the project
 3. Open cmd
-4. Type ‘git clone https://gitlab.tue.nl/20224113/data-challenge-2-group-15.git’
+4. Type ‘git clone https://github.com/stiverthijmen163/DC2-Group-15.git’
 
-## Starting Jupyter Lab
+## Starting Jupyter Lab (Optional if you would like to use notebooks! Not useful when you work with .py files, use VS code or Pycharm instead)
 1. Open Anaconda and launch Jupyter Lab
 2. When Jupyter Lab is launches, nagivate the the cloned project
 
