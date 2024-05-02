@@ -25,14 +25,14 @@ def load_data():
 
     # All filenames containing 'outcomes'
     table_name = "outcomes"
-    get_data(data_path, "outcomes")
+    df = get_data(data_path, "outcomes")
     df.to_sql(table_name, conn, index=False, if_exists="replace")
     conn.commit()
     print(f"CSV data successfully imported into SQLite database: {SQL_path}, table: {table_name}")
 
     # All filenames containing 'stop'
     table_name = "stop_and_search"
-    get_data(data_path, "stop")
+    df = get_data(data_path, "stop")
     df.to_sql(table_name, conn, index=False, if_exists="replace")
     conn.commit()
     print(f"CSV data successfully imported into SQLite database: {SQL_path}, table: {table_name}")
@@ -76,6 +76,7 @@ def get_data(path: str, word: str) -> pd.DataFrame:
     for file in dir:
         if word in file:
             df0 = pd.read_csv(f"{path}/{file}")
+            print(f"{path}/{file}")
 
             # create one large dataframe
             if df is None:
