@@ -2,9 +2,9 @@ import pandas as pd
 import sqlite3
 
 
-def clean_data(table_name: str) -> None:
+def clean_data(table_name: str, query) -> None:
     print("collecting data...")
-    df0 = get_borough(table_name)
+    df0 = get_borough(query)
 
     print("creating binary columns...")
     df1 = pd.crosstab(df0.index, df0.crime_type)
@@ -23,10 +23,7 @@ def clean_data(table_name: str) -> None:
     print(f"CSV data successfully imported into SQLite database: data/cleaned_police_data.db, table: {table_name}_cleaned")
 
 
-def get_borough(table_name: str) -> pd.DataFrame:
-    query = f'''SELECT "Crime ID" AS crime_ID, Month, SUBSTRING("LSOA name", 1, length("LSOA name") - 5) AS Borough, "Crime Type" AS crime_type
-    FROM {table_name}
-    WHERE Borough IN ((SELECT DISTINCT Borough FROM PAS_Borough))'''
+def get_borough(query) -> pd.DataFrame:
 
     df = pd.read_sql_query(query, conn)
     return df
@@ -38,9 +35,18 @@ if __name__ == '__main__':
     conn = sqlite3.connect("data/police_data.db")
     conn_clean = sqlite3.connect("data/cleaned_police_data.db")
 
-    # clean_data("outcomes")
+    table_name = "outcomes"
+    query = f'''SELECT "Crime ID" AS crime_ID, Month, SUBSTRING("LSOA name", 1, length("LSOA name") - 5) AS Borough, "Outcome type" AS outcome_type
+    FROM {table_name}
+    WHERE Borough IN ((SELECT DISTINCT Borough FROM PAS_Borough))'''
+    clean_data(table_name, query)
     # clean_data("stop_and_search")
-    clean_data("street")
+
+    table_name = "street"
+    query = f'''SELECT "Crime ID" AS crime_ID, Month, SUBSTRING("LSOA name", 1, length("LSOA name") - 5) AS Borough, "Crime type" AS crime_type
+        FROM {table_name}
+        WHERE Borough IN ((SELECT DISTINCT Borough FROM PAS_Borough))'''
+    clean_data(table_name, query)
 
     conn_clean.close()
     conn.close()
