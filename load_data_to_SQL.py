@@ -120,12 +120,18 @@ def get_data(path: str, word: str) -> pd.DataFrame:
 
 
 def lower_case_data(df: pd.DataFrame) -> pd.DataFrame:
-    columns = [i.replace(" ", "_").lower() for i in df.columns.to_list()]
+    # columns = [i.replace(" ", "_").lower() for i in df.columns.to_list()]
+    # df = df.set_axis(columns, axis=1)
+    columns = [i.replace("-", " ").lower() for i in df.columns.to_list()]
+    df = df.set_axis(columns, axis=1)
+
+    columns = ['_'.join(i.lower().split()) for i in df.columns.to_list()]
     df = df.set_axis(columns, axis=1)
 
     for column in columns:
         if df[column].dtype == object:
             df[column] = df[column].astype(str).str.lower()
+            df[column] = df[column].replace("nan", None)
     return df
 
 
