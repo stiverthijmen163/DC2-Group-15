@@ -132,6 +132,8 @@ def lower_case_data(df: pd.DataFrame) -> pd.DataFrame:
         if df[column].dtype == object:
             df[column] = df[column].astype(str).str.lower()
             df[column] = df[column].replace("nan", None)
+            df[column] = df[column].replace('None', None)
+            df[column] = df[column].replace('none', None)
     return df
 
 

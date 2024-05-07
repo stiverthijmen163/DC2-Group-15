@@ -56,12 +56,33 @@ def get_borough(query) -> pd.DataFrame:
     df = pd.read_sql_query(query, conn)
     return df
 
+def remove_outside_borders():
+    table_names = ["outcomes", "stop_and_search", "street"]
+
+    for table_name in table_names:
+        print(f"removing data out of London from: {table_name}")
+        try:
+            query = f"""SELECT * FROM {table_name} WHERE borough IN ((SELECT DISTINCT borough FROM PAS_Borough))"""
+            df = pd.read_sql_query(query, conn)
+        except:
+            query = f"""SELECT *, SUBSTRING(lsoa_name, 1, length(lsoa_name) - 5) AS borough
+            FROM {table_name}
+            WHERE borough IN ((SELECT DISTINCT borough FROM PAS_Borough))"""
+            df = pd.read_sql_query(query, conn)
+            df = df.drop(columns=["borough"])
+
+        df = lower_case_data(df)
+
+        df.to_sql(table_name, conn, if_exists="replace", index=False)
+
 
 if __name__ == '__main__':
     global conn
     global conn_clean
     conn = sqlite3.connect("data/police_data.db")
     conn_clean = sqlite3.connect("data/cleaned_police_data.db")
+
+    remove_outside_borders()
 
     table_name = "outcomes"
     query = f'''SELECT crime_id, month, SUBSTRING(lsoa_name, 1, length(lsoa_name) - 5) AS borough, outcome_type
@@ -70,7 +91,7 @@ if __name__ == '__main__':
     clean_data(table_name, query, ["outcome_type"])
 
     table_name = "stop_and_search"
-    query = f"""SELECT type, gender, age_range, self_defined_ethnicity, officer_defined_ethnicity, legislation, object_of_search, outcome, month
+    query = f"""SELECT type, gender, age_range, self_defined_ethnicity, officer_defined_ethnicity, legislation, object_of_search, outcome, month, borough
     FROM {table_name}
 --     WHERE borough IN ((SELECT DISTINCT borough FROM PAS_Borough))
     """

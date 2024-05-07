@@ -2,6 +2,9 @@ import xml.etree.ElementTree as ET
 from shapely.geometry import Point, Polygon
 import pickle
 import os
+import sqlite3
+import pandas as pd
+from load_data_to_SQL import lower_case_data
 
 
 # Function to parse the KML file and extract borough polygons
@@ -58,3 +61,35 @@ def find_borough(lat, lon):
             return borough_name
 
     return None
+
+
+if __name__ == "__main__":
+    conn = sqlite3.connect("data/police_data.db")
+    query = """
+    SELECT *
+    FROM stop_and_search
+    WHERE longitude not NULL AND latitude not NULL
+    """
+    df = pd.read_sql_query(query, conn)
+    rows = df.to_dict("records")
+    boroughs = []
+    length = len(rows)
+    count  = 0
+
+    for row in rows:
+        borough = find_borough(row["latitude"], row["longitude"])
+        boroughs.append(borough)
+        # print(borough)
+
+        if count % 10000 == 0:
+            print(f"{100 * count /length:.3f}%")
+        count += 1
+
+    print(boroughs)
+    df["borough"] = boroughs
+    df = lower_case_data(df)
+    df.to_sql("stop_and_search", conn, if_exists="replace", index=False)
+
+
+
+

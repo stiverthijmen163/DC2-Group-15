@@ -1,5 +1,12 @@
 # Data-Challenge-2-code
 
+
+# loading and cleaning the data
+Run the following files in order:
+- load_data_to_SQL.py
+- BoroughFinder.py
+- clean_data.py
+
 This repository contains the template code for the TU/e course JBG050 Data Challenge 2.
 Please read this document carefully as it has been filled out with important information.
 
