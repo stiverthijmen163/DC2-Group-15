@@ -40,7 +40,6 @@ def load_data():
     df["year"] = df["month"].astype(str).str[:4]
     df = df[df["year"].astype(int) >= 2014]
     df = df.drop(columns=["year"])
-
     df.to_sql(table_name, conn, index=False, if_exists="replace")
     conn.commit()
     print(f"CSV data successfully imported into SQLite database: {SQL_path}, table: {table_name}")
@@ -90,6 +89,31 @@ def load_data():
     conn.commit()
     print(f"CSV data successfully imported into SQLite database: {SQL_path}, table: {table_name}")
 
+    # Questions table within MPS csv file
+    table_name = "PAS_questions"
+    df = get_data(data_path, "PAS_ward_level")
+
+    # clean the data
+    df.reset_index(drop=True, inplace=True)
+    df = df.drop(
+        ['Unnamed: 0', 'ward_unique', 'Borough2', 'BOROUGHNEIGHBOURHOOD', 'WARD_1', 'WARD_0', 'BOROU0',
+         'BOROU1', 'BOROUGHNEIGHBOURHOODCODED', 'Quarter1.1',
+         'Quarter', 'interview_date', 'quarter'], axis=1)  # drop redundant columns
+    df = lower_case_data(df)
+    df = df.dropna(axis=1, thresh=int((0.5 * len(df))))  # drop all columns that have more than 50% of NA values
+
+    # Formatting month column
+    df['month'] = df['month'].str.replace(r'.*?\((.*?)\).*', r'\1', regex=True)  # only keep the values between the parentheses
+    df['month'] = pd.to_datetime(df['month'], format='%b %Y').dt.strftime('%Y-%m')  # change to correct datetime format
+
+    # Moving the borough column to a better position
+    column_to_move = df.pop('borough')
+    df.insert(2, 'borough', column_to_move)
+
+    df.to_sql(table_name, conn, index=False, if_exists="replace")
+    conn.commit()
+    print(f"CSV data successfully imported into SQLite database: {SQL_path}, table: {table_name}")
+
     conn.close()
 
 
@@ -108,7 +132,7 @@ def get_data(path: str, word: str) -> pd.DataFrame:
     # iterate over all files within dir
     for file in dir:
         if word in file:
-            df0 = pd.read_csv(f"{path}/{file}")
+            df0 = pd.read_csv(f"{path}/{file}", low_memory=False)
 
             # create one large dataframe
             if df is None:
