@@ -103,5 +103,22 @@ if __name__ == '__main__':
     WHERE borough IN ((SELECT DISTINCT borough FROM PAS_Borough))'''
     clean_data(table_name, query, ["crime_type"])
 
+    table_name = "PAS_questions"
+    df_survey = pd.read_sql_query("SELECT * FROM PAS_questions", conn)
+    df_survey['borough'] = df_survey['borough'].replace('kensington & chelsea', 'kensington and chelsea')
+    df_survey['borough'] = df_survey['borough'].replace('barking & dagenham', 'barking and dagenham')
+    df_survey['borough'] = df_survey['borough'].replace('hammersmith & fulham', 'hammersmith and fulham')
+    df_survey = df_survey.replace({'-': None, 'not asked': None})
+    df_survey = df_survey.drop(['financialyear', 'ward', 'ward_n', 'soa1', 'soa2'], axis=1)
+    df_survey = pd.get_dummies(df_survey, columns=df_survey.columns[2:])
+    df_survey = df_survey.groupby(['month', 'borough']).sum()
+    df_survey.reset_index()
+
+    # convert df top database
+    df_survey.to_sql(f"{table_name}_cleaned", conn_clean, if_exists="replace", index=True)
+    conn_clean.commit()
+    print(
+        f"CSV data successfully imported into SQLite database: data/cleaned_police_data.db, table: {table_name}_cleaned\n")
+
     conn_clean.close()
     conn.close()

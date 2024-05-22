@@ -3,6 +3,7 @@ import sqlite3
 import os, sys
 import openpyxl  # Needed to open xlsx files <DO NOT REMOVE>
 import numpy as np
+import xlrd  # Needed to open xls files <DO NOT REMOVE>
 
 
 def load_data():
@@ -17,77 +18,78 @@ def load_data():
     conn = sqlite3.connect(SQL_path)
     cursor = conn.cursor()
 
-    # All filenames containing 'street'
-    table_name = "street"
-    df = get_data(data_path, "street")
-
-    # clean the data
-    df = lower_case_data(df)
-    df["year"] = df["month"].astype(str).str[:4]
-    df = df[df["year"].astype(int) >= 2014]
-    df = df.drop(columns=["year"])
-
-    df.to_sql(table_name, conn, index=False, if_exists="replace")
-    conn.commit()
-    print(f"CSV data successfully imported into SQLite database: {SQL_path}, table: {table_name}")
-
-    # All filenames containing 'outcomes'
-    table_name = "outcomes"
-    df = get_data(data_path, "outcomes")
-
-    # clean the data
-    df = lower_case_data(df)
-    df["year"] = df["month"].astype(str).str[:4]
-    df = df[df["year"].astype(int) >= 2014]
-    df = df.drop(columns=["year"])
-    df.to_sql(table_name, conn, index=False, if_exists="replace")
-    conn.commit()
-    print(f"CSV data successfully imported into SQLite database: {SQL_path}, table: {table_name}")
-
-    # All filenames containing 'stop'
-    table_name = "stop_and_search"
-    df = get_data(data_path, "stop")
-
-    # clean the data
-    df = lower_case_data(df)
-    df["month"] = df["date"].astype(str).str[:7]
-    df = df.drop(columns=["date"])
-
-    df.to_sql(table_name, conn, index=False, if_exists="replace")
-    conn.commit()
-    print(f"CSV data successfully imported into SQLite database: {SQL_path}, table: {table_name}")
-
-    # PAS enquete
-    path = "data/PAS_T&Cdashboard_to Q3 23-24.xlsx"
-
-    # MPS table within PAS csv file
-    table_name = "PAS_MPS"
-    df = pd.read_excel(path, sheet_name="MPS")
-
-    # clean the data
-    df = lower_case_data(df)
-    df["month"] = df["date"].astype(str).str[:7]
-    df = df.drop(columns=["date"])
-
-    df.to_sql(table_name, conn, index=False, if_exists="replace")
-    conn.commit()
-    print(f"CSV data successfully imported into SQLite database: {SQL_path}, table: {table_name}")
-
-    # Borough table within PAS csv file
-    table_name = "PAS_Borough"
-    df = pd.read_excel(path, sheet_name="Borough")
-
-    # get the correct columns
-    df = df[df.columns[:6]].copy()
-
-    # clean the data
-    df = lower_case_data(df)
-    df["month"] = df["date"].astype(str).str[:7]
-    df = df.drop(columns=["date"])
-
-    df.to_sql(table_name, conn, index=False, if_exists="replace")
-    conn.commit()
-    print(f"CSV data successfully imported into SQLite database: {SQL_path}, table: {table_name}")
+    # # All filenames containing 'street'
+    # table_name = "street"
+    # df = get_data(data_path, "street")
+    #
+    # # clean the data
+    # df = lower_case_data(df)
+    # df["year"] = df["month"].astype(str).str[:4]
+    # df = df[df["year"].astype(int) >= 2014]
+    # df = df.drop(columns=["year"])
+    #
+    # df.to_sql(table_name, conn, index=False, if_exists="replace")
+    # conn.commit()
+    # print(f"CSV data successfully imported into SQLite database: {SQL_path}, table: {table_name}")
+    #
+    # # All filenames containing 'outcomes'
+    # table_name = "outcomes"
+    # df = get_data(data_path, "outcomes")
+    #
+    # # clean the data
+    # df = lower_case_data(df)
+    # df["year"] = df["month"].astype(str).str[:4]
+    # df = df[df["year"].astype(int) >= 2014]
+    # df = df.drop(columns=["year"])
+    # df.to_sql(table_name, conn, index=False, if_exists="replace")
+    # conn.commit()
+    # print(f"CSV data successfully imported into SQLite database: {SQL_path}, table: {table_name}")
+    #
+    # # All filenames containing 'stop'
+    # table_name = "stop_and_search"
+    # df = get_data(data_path, "stop")
+    #
+    # # clean the data
+    # df = lower_case_data(df)
+    # df["month"] = df["date"].astype(str).str[:7]
+    # df = df.drop(columns=["date"])
+    #
+    # df.to_sql(table_name, conn, index=False, if_exists="replace")
+    # conn.commit()
+    # print(f"CSV data successfully imported into SQLite database: {SQL_path}, table: {table_name}")
+    #
+    # # PAS enquete
+    # path = "data/PAS_T&Cdashboard_to Q3 23-24.xlsx"
+    #
+    # # MPS table within PAS csv file
+    # table_name = "PAS_MPS"
+    # df = pd.read_excel(path, sheet_name="MPS")
+    #
+    # # clean the data
+    # df = lower_case_data(df)
+    # df["month"] = df["date"].astype(str).str[:7]
+    # df = df.drop(columns=["date"])
+    #
+    # df.to_sql(table_name, conn, index=False, if_exists="replace")
+    # conn.commit()
+    # print(f"CSV data successfully imported into SQLite database: {SQL_path}, table: {table_name}")
+    #
+    # # Borough table within PAS csv file
+    # table_name = "PAS_Borough"
+    # df = pd.read_excel(path, sheet_name="Borough")
+    #
+    # # get the correct columns
+    # df = df[df.columns[:6]].copy()
+    #
+    # # clean the data
+    # df = lower_case_data(df)
+    # df["month"] = df["date"].astype(str).str[:7]
+    # df = df.replace(to_replace="city of westminster", value="westminster")
+    # df = df.drop(columns=["date"])
+    #
+    # df.to_sql(table_name, conn, index=False, if_exists="replace")
+    # conn.commit()
+    # print(f"CSV data successfully imported into SQLite database: {SQL_path}, table: {table_name}")
 
     # Questions table within MPS csv file
     table_name = "PAS_questions"
@@ -114,6 +116,46 @@ def load_data():
     conn.commit()
     print(f"CSV data successfully imported into SQLite database: {SQL_path}, table: {table_name}")
 
+    # unemployment rate
+    table_name = "employment"
+    path = "data/employment-disability-borough.xls"
+    new_df = None
+
+    query = """SELECT DISTINCT borough
+    FROM PAS_borough"""
+    boroughs = pd.read_sql_query(query, conn)["borough"].to_list()
+
+    for year in range(2014, 2023):
+        # load data for 'year'
+        df = pd.read_excel(path, sheet_name=str(year))
+
+        # clean the data
+        df = df[["Unnamed: 1", "Unnamed: 84"]]
+        df = df.set_axis(["borough", "employment"], axis=1)
+        df = lower_case_data(df)
+        df = df.dropna()
+        # df.iloc[33, 0] = "city of westminster"
+        df = df[df["borough"].isin(boroughs)].copy().reset_index(drop=True)
+
+        # concatenate dataframes
+        df["year"] = year
+        if new_df is None:
+            new_df = df.copy()
+        else:
+            new_df = pd.concat([new_df, df])
+
+    # group df
+    new_df["employment"] = new_df["employment"].astype(float)
+    df = new_df.groupby(["borough", "year"]).mean()
+
+    # save df to SQL
+    SQL_path = "data/cleaned_police_data.db"
+    conn_clean = sqlite3.connect(SQL_path)
+    df.to_sql(table_name, conn_clean, index=True, if_exists="replace")
+    conn_clean.commit()
+    print(f"CSV data successfully imported into SQLite database: {SQL_path}, table: {table_name}")
+
+    conn_clean.close()
     conn.close()
 
 
