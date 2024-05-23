@@ -54,8 +54,11 @@ def make_linear_regression(question: str):
     Creates and plots a regression model that predicts the MPS by one question of the df_survey_cleaned dataframe.
     :param question: dummy variable name from PAS survey that is a question with corresponding answer (1 = yes, 0 = no)
     """
-    X = df_survey_cleaned[[question]]
-    y = df_survey_cleaned[['mps']]
+    # THIS IS NOT HOW YOU CALCULATE PROPORTIONS: THE SAME PERSON MIGHT HAVE ANSWERED MORE THAN ONE QUESTIONS!
+    df_survey_cleaned['proportion_yes'] = df_survey_cleaned[question] / df_survey_cleaned['total respondents']
+    df = df_survey_cleaned[df_survey_cleaned['proportion_yes'] > 0]
+    X = df[['proportion_yes']]
+    y = df[['mps']]
 
     # Create model
     model = LinearRegression()
@@ -71,7 +74,7 @@ def make_linear_regression(question: str):
     plt.plot(X, y_pred, color='red', label='Regression line')
 
     # Add labels and legend
-    plt.xlabel(f'Number of persons that answered {question}')
+    plt.xlabel(f'Proportion of persons that answered {question}')
     plt.ylabel('MPS')
     plt.title(f'Linear Regression of MPS and question {question}')
     plt.legend()
@@ -290,12 +293,18 @@ plt.show()
 df_survey_cleaned['month'] = pd.to_datetime(
     df_survey_cleaned['month'])   # convert to datetime so that we can join two datetime columns with each other
 
-df_survey_cleaned.drop(columns=['borough'],
+# Get total number of respondents (since question 1 is always asked, we can sum the values of the dummy variables of
+# question 1 to get the total number of respondents)
+df_survey_cleaned['total respondents'] = df_survey_cleaned.iloc[:, 2:10].sum(axis=1)
+
+df_survey_cleaned.drop(columns=['borough'],  # CALCULATE PROPORTION HERE!!
                        inplace=True)   # dropping borough column since MPS is the same for every borough
 
+# Grouping and joining so that we can use MPS
 df_survey_cleaned = pd.merge(df_survey_cleaned.groupby(['month']).sum(),
                              df_PAS_Borough[['month', 'mps']].groupby(['month']).mean(),
                              on=['month'])
+
 
 # Question q39a_2: To what extent do you think knife crime is a problem in this area? By knife crime I mean people
 # carrying or using knives to threaten or commit violence.
@@ -329,3 +338,34 @@ make_linear_regression('a120_strongly agree')
 # Prior to this interview, had you heard about your Safer Neighbourhood Team or your Dedicated
 # Ward Officers?
 make_linear_regression('rq80e_no')
+
+# Question nq147r: What is your ethnic group?
+# NOTE: this question was not always asked, so beware of outliers.
+make_linear_regression('nq147r_black')
+make_linear_regression('nq147r_asian')
+make_linear_regression('nq147r_white british')
+
+# Question q150r: What is your sexual orientation?
+# INTERVIEWER: Read out options only if necessary.
+# If necessary remind the respondent that they do not need to answer if they would prefer not to
+# say.
+make_linear_regression('q150r_heterosexual')
+make_linear_regression('q150r_non-heterosexual')
+
+# Question nq149r: What is your religion, even if you are not currently practicing?
+make_linear_regression('nq149r_christian')
+make_linear_regression('nq149r_muslim')
+make_linear_regression('nq149r_hindu')
+make_linear_regression('nq149r_no religion')
+
+# Question xq135: What is your sex?
+make_linear_regression('xq135r_male')
+make_linear_regression('xq135r_female')
+
+# Question nq135bd: To what extent do you agree or disagree with the following statements:
+# The Metropolitan Police Service is an organisation that I can trust
+make_linear_regression('nq135bd_strongly agree')
+make_linear_regression('nq135bd_neither agree nor disagree')
+make_linear_regression('nq135bd_strongly disagree')
+
+# FOR TOTAL RESPONDANTS: SUM THE VALUE OF THE DUMMY VARIABLES OF QUESTION 1
