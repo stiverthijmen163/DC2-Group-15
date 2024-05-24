@@ -49,12 +49,12 @@ def print_importances(importances: list, title: str):
         print(f'Attribute Name: {attribute}, Score: {score}')
     print('\n')
 
-def make_linear_regression(question: str):
+def make_linear_regression(question: str, show: bool):
     """
     Creates and plots a regression model that predicts the MPS by one question of the df_survey_cleaned dataframe.
     :param question: dummy variable name from PAS survey that is a question with corresponding answer (1 = yes, 0 = no)
+    :param show: whether to show the linear regression plot
     """
-    # THIS IS NOT HOW YOU CALCULATE PROPORTIONS: THE SAME PERSON MIGHT HAVE ANSWERED MORE THAN ONE QUESTIONS!
     df_survey_cleaned['proportion_yes'] = df_survey_cleaned[question] / df_survey_cleaned['total respondents']
     df = df_survey_cleaned[df_survey_cleaned['proportion_yes'] > 0]
     X = df[['proportion_yes']]
@@ -67,19 +67,50 @@ def make_linear_regression(question: str):
     # Generate predictions
     y_pred = model.predict(X)
 
-    # Plot the original data points
-    plt.scatter(X, y, color='blue', label='Original data')
+    if show:
+        # Plot the original data points
+        plt.scatter(X, y, color='blue', label='Original data')
 
-    # Plot the regression line
-    plt.plot(X, y_pred, color='red', label='Regression line')
+        # Plot the regression line
+        plt.plot(X, y_pred, color='red', label='Regression line')
 
-    # Add labels and legend
-    plt.xlabel(f'Proportion of persons that answered {question}')
-    plt.ylabel('MPS')
-    plt.title(f'Linear Regression of MPS and question {question}')
-    plt.legend()
-    plt.show()
+        # Showing regression plot
+        # Add labels and legend
+        plt.xlabel(f'Proportion of persons that answered {question}')
+        plt.ylabel('MPS')
+        plt.title(f'Linear Regression of MPS and question {question}')
+        plt.legend()
+        plt.show()
 
+def make_best_linear_regressions(questions: list):
+    """
+    Plots the questions with the highest R^2 of the cleaned survey data set
+    :param questions: list consisting the questions of the cleaned survey data set
+    """
+    for question in questions:
+        df_survey_cleaned['proportion_yes'] = df_survey_cleaned[question] / df_survey_cleaned['total respondents']
+        df = df_survey_cleaned[df_survey_cleaned['proportion_yes'] > 0]
+
+        X = df[['proportion_yes']]
+        y = df['mps']
+
+        # Create and fit the model
+        model = LinearRegression()
+        model.fit(X, y)
+
+        # Create predictions and get R^2
+        y_pred = model.predict(X)
+        R_squared = model.score(X, y)
+        # Plot if R-squared is in range
+        if R_squared > 0.70:
+            print(question)
+            plt.scatter(X, y, color='blue', label='Original data')
+            plt.plot(X, y_pred, color='red', label='Regression line')
+            plt.xlabel(f'Proportion of persons that answered {question}')
+            plt.ylabel('MPS')
+            plt.title(f'Linear Regression of MPS and question {question}')
+            plt.legend()
+            plt.show()
 
 # Connect to db
 cnx = sqlite3.connect('data/police_data.db')
@@ -297,75 +328,124 @@ df_survey_cleaned['month'] = pd.to_datetime(
 # question 1 to get the total number of respondents)
 df_survey_cleaned['total respondents'] = df_survey_cleaned.iloc[:, 2:10].sum(axis=1)
 
-df_survey_cleaned.drop(columns=['borough'],  # CALCULATE PROPORTION HERE!!
+df_survey_cleaned.drop(columns=['borough'],
                        inplace=True)   # dropping borough column since MPS is the same for every borough
+
+# Want to exclude all questions (= all except month and borough column) that have been answered less than 1000 times, to
+# avoid overfitting
+column_sums = df_survey_cleaned[df_survey_cleaned.columns[2:]].sum()
+columns_to_drop = column_sums[column_sums < 1000].index
+df_survey_cleaned = df_survey_cleaned.drop(columns=columns_to_drop)
 
 # Grouping and joining so that we can use MPS
 df_survey_cleaned = pd.merge(df_survey_cleaned.groupby(['month']).sum(),
                              df_PAS_Borough[['month', 'mps']].groupby(['month']).mean(),
                              on=['month'])
 
-
 # Question q39a_2: To what extent do you think knife crime is a problem in this area? By knife crime I mean people
 # carrying or using knives to threaten or commit violence.
-make_linear_regression('q39a_2_not a problem at all')
+make_linear_regression('q39a_2_not a problem at all', True)
+make_linear_regression('q39a_2_major problem', True)
 
 # Question nq133a: Do you know how to contact your Safer Neighbourhood Team or your Dedicated Ward Officers?
 # If asked: You can find out more about your local team by entering your postcode or looking up
 # your borough on the website http://www.met.police.uk/saferneighbourhoods/.
-make_linear_regression('nq133a_yes')
+make_linear_regression('nq133a_yes', True)
 
 # Question q61: Taking everything into account, how good a job do you think the police IN LONDON AS A WHOLE
 # are doing?
-make_linear_regression('q61_good')
-make_linear_regression('q61_fair')
-make_linear_regression('q61_poor')
+make_linear_regression('q61_good', True)
+make_linear_regression('q61_fair', False)
+make_linear_regression('q61_poor', True)
 
 # Question q62a: To what extent do you agree with these statements about the police in your area? By 'your area' I
 # mean within 15 minutes' walk from your home.
 # They can be relied on to be there when you need them
-make_linear_regression('q62a_tend to agree')
+make_linear_regression('q62a_tend to agree', True)
 
 # Question a120: ‘Stop and Search’ is a power that allows the police to speak to someone if they think they have
 # been involved in a crime, and to search them to see whether they are carrying anything that they
 # should not be.
 # To what extent do you agree that the Police should conduct Stop and Search?
-make_linear_regression('a120_strongly agree')
+make_linear_regression('a120_strongly agree', True)
 
 # Question rq80e: Your Safer Neighbourhood Team is a group of police officers dedicated to serving your community.
 # The team includes 2 officers (Dedicated Ward Officers) based in your area (or 'ward'), supported
 # by additional officers from the wider area.
 # Prior to this interview, had you heard about your Safer Neighbourhood Team or your Dedicated
 # Ward Officers?
-make_linear_regression('rq80e_no')
+make_linear_regression('rq80e_no', False)
+make_linear_regression('rq80e_yes', False)
 
 # Question nq147r: What is your ethnic group?
 # NOTE: this question was not always asked, so beware of outliers.
-make_linear_regression('nq147r_black')
-make_linear_regression('nq147r_asian')
-make_linear_regression('nq147r_white british')
+make_linear_regression('nq147r_black', False)
+make_linear_regression('nq147r_asian', False)
+make_linear_regression('nq147r_white british', False)
 
 # Question q150r: What is your sexual orientation?
 # INTERVIEWER: Read out options only if necessary.
 # If necessary remind the respondent that they do not need to answer if they would prefer not to
 # say.
-make_linear_regression('q150r_heterosexual')
-make_linear_regression('q150r_non-heterosexual')
+make_linear_regression('q150r_heterosexual', False)
+make_linear_regression('q150r_non-heterosexual', False)
 
 # Question nq149r: What is your religion, even if you are not currently practicing?
-make_linear_regression('nq149r_christian')
-make_linear_regression('nq149r_muslim')
-make_linear_regression('nq149r_hindu')
-make_linear_regression('nq149r_no religion')
+make_linear_regression('nq149r_christian', True)
+make_linear_regression('nq149r_muslim', False)
+make_linear_regression('nq149r_hindu', True)
+make_linear_regression('nq149r_no religion', False)
 
 # Question xq135: What is your sex?
-make_linear_regression('xq135r_male')
-make_linear_regression('xq135r_female')
+make_linear_regression('xq135r_male', True)
+make_linear_regression('xq135r_female', True)
 
 # Question nq135bd: To what extent do you agree or disagree with the following statements:
 # The Metropolitan Police Service is an organisation that I can trust
-make_linear_regression('nq135bd_strongly agree')
-make_linear_regression('nq135bd_neither agree nor disagree')
-make_linear_regression('nq135bd_strongly disagree')
+make_linear_regression('nq135bd_strongly agree', False)
+make_linear_regression('nq135bd_neither agree nor disagree', True)
+make_linear_regression('nq135bd_strongly disagree', False)
 
-# FOR TOTAL RESPONDANTS: SUM THE VALUE OF THE DUMMY VARIABLES OF QUESTION 1
+# Question q15: To what extent are you worried about…
+# Anti-social behaviour in your area?
+# IF necessary: By this I mean issues such as vandalism, using or dealing drugs, people being drunk
+# or rowdy, teenagers hanging around on the streets, or noisy neighbours?
+make_linear_regression('q15_very worried', True)
+make_linear_regression('q15_not at all worried', True)
+
+# Question q65:
+# On average, how often do YOU see the police PATROLLING ON FOOT, BICYCLE OR HORSEBACK IN
+# THIS AREA? Remember I am talking about the area within 15 minutes’ walk from here.
+# If necessary: This does include PSCOs and we are talking about how often they “currently” see
+# them.
+make_linear_regression('q65_at least daily', True)
+make_linear_regression('q65_never', True)
+
+# Question q79g:
+# Please use a scale of 1 to 7, where 1 = Not at all well and 7 = Very well
+# How well do you think the Metropolitan Police… Tackle drug dealing and drug use?
+# If necessary: Please think of London as a whole, rather than your local area in this instance
+make_linear_regression('q79g_1 not at all well', True)
+
+# Question q79d:
+# …Tackle gun crime? (scale 1 to 7)
+make_linear_regression('q79d_2', True)
+
+# Question q79b:
+# …Respond to emergencies promptly? (scale 1 to 7)
+make_linear_regression('q79b_3', True)
+
+# Question 62f:
+# To what extent do you agree with these statements about the police in your area? By 'your area' I
+# mean within 15 minutes' walk from your home.
+# They are dealing with the things that matter to people in this community
+make_linear_regression('q62f_tend to disagree', True)
+
+# Question q66:
+# On average, how often do YOU see the police PATROLLING ON FOOT OR BICYCLE IN THIS AREA? Remember I am talking about
+# the area within 15 minutes' walk. Do you think this is...?
+make_linear_regression('q66_not often enough', True)
+
+# Get regression plots with highest R^2
+questions = df_survey_cleaned.columns[:-3]
+make_best_linear_regressions(questions)
