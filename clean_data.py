@@ -82,34 +82,62 @@ if __name__ == '__main__':
     conn = sqlite3.connect("data/police_data.db")
     conn_clean = sqlite3.connect("data/cleaned_police_data.db")
 
-    remove_outside_borders()
+#     remove_outside_borders()
+#
+#     table_name = "outcomes"
+#     query = f'''SELECT crime_id, month, SUBSTRING(lsoa_name, 1, length(lsoa_name) - 5) AS borough, outcome_type
+#     FROM {table_name}
+#     WHERE borough IN ((SELECT DISTINCT borough FROM PAS_Borough))'''
+#     clean_data(table_name, query, ["outcome_type"])
+#
+#     table_name = "stop_and_search"
+#     query = f"""SELECT type, gender, age_range, self_defined_ethnicity, officer_defined_ethnicity, legislation, object_of_search, outcome, month, borough
+#     FROM {table_name}
+# --     WHERE borough IN ((SELECT DISTINCT borough FROM PAS_Borough))
+#     """
+#     clean_data(table_name, query, ["type", "gender", "age_range", "self_defined_ethnicity", "officer_defined_ethnicity", "legislation", "object_of_search", "outcome"])
+#
+#     table_name = "street"
+#     query = f'''SELECT crime_id, month, SUBSTRING(lsoa_name, 1, length(lsoa_name) - 5) AS borough, crime_type
+#     FROM {table_name}
+#     WHERE borough IN ((SELECT DISTINCT borough FROM PAS_Borough))'''
+#     clean_data(table_name, query, ["crime_type"])
 
-    table_name = "outcomes"
-    query = f'''SELECT crime_id, month, SUBSTRING(lsoa_name, 1, length(lsoa_name) - 5) AS borough, outcome_type
-    FROM {table_name}
-    WHERE borough IN ((SELECT DISTINCT borough FROM PAS_Borough))'''
-    clean_data(table_name, query, ["outcome_type"])
-
-    table_name = "stop_and_search"
-    query = f"""SELECT type, gender, age_range, self_defined_ethnicity, officer_defined_ethnicity, legislation, object_of_search, outcome, month, borough
-    FROM {table_name}
---     WHERE borough IN ((SELECT DISTINCT borough FROM PAS_Borough))
-    """
-    clean_data(table_name, query, ["type", "gender", "age_range", "self_defined_ethnicity", "officer_defined_ethnicity", "legislation", "object_of_search", "outcome"])
-
-    table_name = "street"
-    query = f'''SELECT crime_id, month, SUBSTRING(lsoa_name, 1, length(lsoa_name) - 5) AS borough, crime_type
-    FROM {table_name}
-    WHERE borough IN ((SELECT DISTINCT borough FROM PAS_Borough))'''
-    clean_data(table_name, query, ["crime_type"])
-
-    table_name = "PAS_questions"
+    # table_name = "PAS_questions"
     df_survey = pd.read_sql_query("SELECT * FROM PAS_questions", conn)
     df_survey['borough'] = df_survey['borough'].replace('kensington & chelsea', 'kensington and chelsea')
     df_survey['borough'] = df_survey['borough'].replace('barking & dagenham', 'barking and dagenham')
     df_survey['borough'] = df_survey['borough'].replace('hammersmith & fulham', 'hammersmith and fulham')
     df_survey = df_survey.replace({'-': None, 'not asked': None})
     df_survey = df_survey.drop(['financialyear', 'ward', 'ward_n', 'soa1', 'soa2'], axis=1)
+
+    # age
+    table_name = "PAS_questions_age"
+    df_survey_age = df_survey.copy()
+    df_survey_age = pd.get_dummies(df_survey_age, columns=df_survey_age.columns[2:].difference(["q136r"]))
+    df_survey_age = df_survey_age.groupby(["q136r", "month", "borough"]).sum()
+    df_survey_age = df_survey_age.reset_index()
+
+    # convert df based on ages to SQL db
+    df_survey_age.to_sql(f"{table_name}_cleaned", conn_clean, if_exists="replace", index=False)
+    conn_clean.commit()
+    print(f"CSV data successfully imported into SQLite database: data/cleaned_police_data.db, table: {table_name}_cleaned\n")
+
+    # race
+    table_name = "PAS_questions_race"
+    df_survey_race = df_survey.copy()
+    df_survey_race = pd.get_dummies(df_survey_race, columns=df_survey_race.columns[2:].difference(["nq147r"]))
+    df_survey_race = df_survey_race.groupby(["nq147r", "month", "borough"]).sum()
+    df_survey_race = df_survey_race.reset_index()
+
+    # convert df based on ages to SQL db
+    df_survey_race.to_sql(f"{table_name}_cleaned", conn_clean, if_exists="replace", index=False)
+    conn_clean.commit()
+    print(
+        f"CSV data successfully imported into SQLite database: data/cleaned_police_data.db, table: {table_name}_cleaned\n")
+
+    # all data
+    table_name = "PAS_questions"
     df_survey = pd.get_dummies(df_survey, columns=df_survey.columns[2:])
     df_survey = df_survey.groupby(['month', 'borough']).sum()
     df_survey.reset_index()
@@ -117,8 +145,7 @@ if __name__ == '__main__':
     # convert df top database
     df_survey.to_sql(f"{table_name}_cleaned", conn_clean, if_exists="replace", index=True)
     conn_clean.commit()
-    print(
-        f"CSV data successfully imported into SQLite database: data/cleaned_police_data.db, table: {table_name}_cleaned\n")
+    print(f"CSV data successfully imported into SQLite database: data/cleaned_police_data.db, table: {table_name}_cleaned\n")
 
     conn_clean.close()
     conn.close()
