@@ -21,16 +21,19 @@ def make_best_linear_regressions(df: pd.DataFrame, df_a: pd.DataFrame, df_r: pd.
     combined_columns = list(set(df.columns.to_list()) & set(df_a.columns.to_list()) & set(df_r.columns.to_list()))
     ages = df_a["q136r"].unique().tolist()
     races = df_r["nq147r"].unique().tolist()
-    print(type(ages))
-    print(races)
-    df = df.copy()
+    # print(type(ages))
+    # print(races)
+    # df0 = df.copy()
     for question in questions:
         if question in combined_columns:
             show = False
-            df['proportion_yes'] = df[question] / df['total respondents']
-            df = df[df['proportion_yes'] > 0].copy()
-            X = df[['proportion_yes']]
-            y = df['proportion']
+            show_race = False
+            show_age = False
+            df0 = df.copy()
+            df0['proportion_yes'] = df0[question] / df0['total respondents']
+            df0 = df0[df0['proportion_yes'] > 0].copy()
+            X = df0[['proportion_yes']]
+            y = df0['proportion']
 
             # Create and fit the model
             try:
@@ -42,64 +45,84 @@ def make_best_linear_regressions(df: pd.DataFrame, df_a: pd.DataFrame, df_r: pd.
             # Create predictions and get R^2
             y_pred = model.predict(X)
             R_squared = model.score(X, y)
+
+            plt.figure(figsize=(12, 18))
+            plt.subplot(3, 1, 1)
+
             # Plot if R-squared is in range
-            if R_squared > 0.70 and len(df) > 4:
-                show=True
-            if not show:
-                continue
+            if R_squared > 0.70 and len(df0) > 3:
+                show = True
+            # if not show:
+            #     continue
             #     print(question)
             #     print(df)
             #     print(X)
-            #     plt.scatter(X, y, color='blue', label='Original data')
-            #     plt.plot(X, y_pred, color='red', label='Regression line')
+                plt.scatter(X, y, color='blue', label='Original data')
+                plt.plot(X, y_pred, color='red', label='Regression line')
             #     plt.xlabel(f'Proportion of persons that answered {question}')
             #     plt.ylabel('MPS')
             #     plt.title(f'Linear Regression of MPS and question {question}')
             #     plt.legend()
             #     plt.savefig(f"artifacts/{borough}_{question}.png")
             #     plt.show()
+            else:
+                plt.scatter(X, y, color='blue', label='Original data', alpha=0.05)
+                plt.plot(X, y_pred, label=f'Regression line{R_squared:.2f}, {len(df0)}', color="red", alpha=0.05)
 
+            plt.xlabel(f'Proportion of persons that answered {question}')
+            plt.ylabel('MPS')
+            plt.title(f'Linear Regression of MPS and question {question}')
+            plt.legend()
 
-            # for age in ages:
-            #     df_an = df_a[df_a["q136r"] == age].copy()
-            #     # print(df_an)
-            #
-            #     df_an['proportion_yes'] = df_an[question] / df_an['total respondents']
-            #     df_an = df_an[df_an['proportion_yes'] > 0].copy()
-            #     X = df_an[['proportion_yes']]
-            #     y = df_an['proportion']
-            #
-            #     # Create and fit the model
-            #     try:
-            #         model = LinearRegression()
-            #         model.fit(X, y)
-            #         # print("OK")
-            #     except:
-            #         # print(" NOT OK")
-            #         # print(df_a)
-            #         continue
-            #
-            #     # Create predictions and get R^2
-            #     y_pred = model.predict(X)
-            #     R_squared = model.score(X, y)
-            #
-            #     if len(df_an) > 3 and R_squared > 0.7:
-            #         # plt.plot(X, y_pred, label=f'Regression line {age}, {R_squared:.2f}')
-            #
-            #         # if R_squared > 0.7:
-            #         plt.scatter(X, y, label='Original data', color=colors[ages.index(age)])
-            #         plt.plot(X, y_pred, label=f'Regression line {age}, {R_squared:.2f}, {len(df_an)}', color=colors[ages.index(age)])
-            #         show = True
-            #     else:
-            #         plt.plot(X, y_pred, label=f'Regression line {age}, {R_squared:.2f}, {len(df_an)}', color=colors[ages.index(age)], alpha=0.05)
+            age_count = 0
+
+            for age in ages:
+                df_an = df_a[df_a["q136r"] == age].copy()
+                # print(df_an)
+
+                df_an['proportion_yes'] = df_an[question] / df_an['total respondents']
+                df_an = df_an[df_an['proportion_yes'] > 0].copy()
+                X = df_an[['proportion_yes']]
+                y = df_an['proportion']
+
+                # Create and fit the model
+                try:
+                    model = LinearRegression()
+                    model.fit(X, y)
+                    # print("OK")
+                except:
+                    # print(" NOT OK")
+                    # print(df_a)
+                    continue
+
+                # Create predictions and get R^2
+                y_pred = model.predict(X)
+                R_squared = model.score(X, y)
+
+                plt.subplot(3, 1, 2)
+
+                if len(df_an) > 3 and R_squared > 0.7:
+                    # plt.plot(X, y_pred, label=f'Regression line {age}, {R_squared:.2f}')
+
+                    # if R_squared > 0.7:
+                    plt.scatter(X, y, label='Original data', color=colors[ages.index(age)])
+                    plt.plot(X, y_pred, label=f'Regression line {age}, {R_squared:.2f}, {len(df_an)}', color=colors[ages.index(age)])
+                    age_count += 1
+                else:
+                    plt.plot(X, y_pred, label=f'Regression line {age}, {R_squared:.2f}, {len(df_an)}', color=colors[ages.index(age)], alpha=0.05)
+
+                if age_count > 1:
+                    show_age = True
             #
             # if show:
-            #     plt.xlabel(f'Proportion of persons that answered {question}')
-            #     plt.ylabel('MPS')
-            #     plt.title(f'Linear Regression of MPS and question {question}')
-            #     plt.legend()
+                plt.xlabel(f'Proportion of persons that answered {question}')
+                plt.ylabel('MPS')
+                plt.title(f'Linear Regression of MPS and question {question}')
+                plt.legend()
             #     plt.show()
             # plt.close("all")
+
+            race_count = 0
 
             for race in races:
                 df_rn = df_r[df_r["nq147r"] == race].copy()
@@ -124,6 +147,9 @@ def make_best_linear_regressions(df: pd.DataFrame, df_a: pd.DataFrame, df_r: pd.
                 y_pred = model.predict(X)
                 R_squared = model.score(X, y)
 
+
+                plt.subplot(3, 1, 3)
+
                 if len(df_rn) > 3 and R_squared > 0.7:
                     # plt.plot(X, y_pred, label=f'Regression line {age}, {R_squared:.2f}')
 
@@ -131,16 +157,23 @@ def make_best_linear_regressions(df: pd.DataFrame, df_a: pd.DataFrame, df_r: pd.
                     plt.scatter(X, y, label='Original data', color=colors[races.index(race)])
                     plt.plot(X, y_pred, label=f'Regression line {race}, {R_squared:.2f}, {len(df_rn)}', color=colors[races.index(race)])
                     # show = True
+                    race_count += 1
                 else:
                     plt.plot(X, y_pred, label=f'Regression line {race}, {R_squared:.2f}, {len(df_rn)}', color=colors[races.index(race)], alpha=0.05)
 
-            if show:
+                if race_count > 1:
+                    show_race = True
+
+            if show or show_race or show_age:
                 plt.xlabel(f'Proportion of persons that answered {question}')
                 plt.ylabel('MPS')
                 plt.title(f'Linear Regression of MPS and question {question}')
                 plt.legend()
                 # plt.show()
+                # plt.figure(figsize=(12, 18))
+                question = question.replace('/', ' or ')
                 plt.savefig(f"artifacts/{borough}_{question}.png")
+                # plt.figure(figsize=(12, 36))
             plt.close("all")
 
 
@@ -216,6 +249,7 @@ if __name__ == "__main__":
     df = df.drop(columns=columns_to_drop)
 
     for borough in boroughs:
+        print(borough)
         df_b = df[df["borough"] == borough].copy()
         df_age_b = df_age[df_age["borough"] == borough].copy()
         df_race_b = df_race[df_race["borough"] == borough].copy()
