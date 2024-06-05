@@ -113,6 +113,52 @@ def make_best_linear_regressions(questions: list):
             plt.show()
 
 
+def make_more_linear_regressions(questions, rows, columns, filename):
+    """
+    Creates and plots regression models in a grid that predict the MPS by each question in the list of questions.
+    :param questions: list of dummy variable names from PAS survey that are questions with corresponding answers (1 = yes, 0 = no)
+    :param rows: number of rows for the plot grid
+    :param columns: number of columns for the plot grid
+    :param filename: name of the file to save the plot
+    """
+    # Create a 3x2 grid of subplots
+    fig, axs = plt.subplots(rows, columns, figsize=(15, 15))
+
+    # Flatten the array of axes for easier iteration
+    axs = axs.flatten()
+
+    # Plot each question on a separate subplot
+    for ax, question in zip(axs, questions):
+        df_survey_cleaned['proportion_yes'] = df_survey_cleaned[question] / df_survey_cleaned['total respondents']
+        df = df_survey_cleaned[df_survey_cleaned['proportion_yes'] > 0]
+        X = df[['proportion_yes']]
+        y = df[['mps']]
+
+        # Create model
+        model = LinearRegression()
+        model.fit(X, y)
+        y_pred = model.predict(X)
+
+        # Plot original
+        ax.scatter(X, y, color='blue', label='Original data')
+
+        # Plot the regression line
+        ax.plot(X, y_pred, color='red', label='Regression line')
+
+        # Add labels and legend
+        ax.set_xlabel(f'Proportion of persons that answered {question}')
+        ax.set_ylabel('MPS')
+        ax.set_title(f'Linear Regression of MPS and question {question}')
+        ax.legend()
+
+    # Adjust layout
+    plt.tight_layout()
+    plt.show()
+
+    # Shave the plot
+    plt.savefig(filename)
+
+
 if __name__ == "__main__":
     # Connect to db
     cnx = sqlite3.connect('data/police_data.db')
@@ -323,8 +369,7 @@ if __name__ == "__main__":
     # timeline. For now, I used the first solution.
 
     # Create Linear Regression model to check decision tree results
-    df_survey_cleaned['month'] = pd.to_datetime(
-        df_survey_cleaned['month'])   # convert to datetime so that we can join two datetime columns with each other
+    df_survey_cleaned['month'] = pd.to_datetime(df_survey_cleaned['month'])   # convert to datetime so that we can join two datetime columns with each other
 
     # Get total number of respondents (since question 1 is always asked, we can sum the values of the dummy variables of
     # question 1 to get the total number of respondents)
@@ -435,19 +480,25 @@ if __name__ == "__main__":
 
     # Question q79b:
     # …Respond to emergencies promptly? (scale 1 to 7)
-    make_linear_regression('q79b_3', True)
+    make_linear_regression('q79b_3', False)
 
     # Question 62f:
     # To what extent do you agree with these statements about the police in your area? By 'your area' I
     # mean within 15 minutes' walk from your home.
     # They are dealing with the things that matter to people in this community
-    make_linear_regression('q62f_tend to disagree', True)
+    make_linear_regression('q62f_tend to disagree', False)
 
     # Question q66:
     # On average, how often do YOU see the police PATROLLING ON FOOT OR BICYCLE IN THIS AREA? Remember I am talking about
     # the area within 15 minutes' walk. Do you think this is...?
-    make_linear_regression('q66_not often enough', True)
+    make_linear_regression('q66_not often enough', False)
 
     # Get regression plots with highest R^2
     questions = df_survey_cleaned.columns[:-3]
-    make_best_linear_regressions(questions)
+    #make_best_linear_regressions(questions)
+
+    # plot subplots for findings section in paper
+    report_questions = ['a120_strongly agree', 'q66_not often enough', 'q79g_1 not at all well', 'q15_very worried',
+                        'q15_not at all worried', 'q62f_tend to disagree']
+    make_more_linear_regressions(report_questions, 3, 2, 'report_findings_LR')
+
