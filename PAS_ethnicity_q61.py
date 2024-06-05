@@ -30,7 +30,7 @@ def make_best_linear_regressions(df: pd.DataFrame, df_a: pd.DataFrame, df_r: pd.
             show_race = False
             show_age = False
             df0 = df.copy()
-            df0['proportion_yes'] = df0[question] / df0['total respondents']
+            df0['proportion_yes'] = df0[question] / df0['total']
             df0 = df0[df0['proportion_yes'] > 0].copy()
             X = df0[['proportion_yes']]
             y = df0['proportion']
@@ -47,7 +47,7 @@ def make_best_linear_regressions(df: pd.DataFrame, df_a: pd.DataFrame, df_r: pd.
             R_squared = model.score(X, y)
 
             plt.figure(figsize=(12, 18))
-            plt.subplot(3, 1, 1)
+            ax1 = plt.subplot(3, 1, 1)
 
             # Plot if R-squared is in range
             if R_squared > 0.70 and len(df0) > 3:
@@ -67,23 +67,24 @@ def make_best_linear_regressions(df: pd.DataFrame, df_a: pd.DataFrame, df_r: pd.
             #     plt.show()
             else:
                 plt.scatter(X, y, color='blue', label='Original data', alpha=0.05)
-                plt.plot(X, y_pred, label=f'Regression line{R_squared:.2f}, {len(df0)}', color="red", alpha=0.05)
+                plt.plot(X, y_pred, label=f'Regression line {R_squared:.2f}, {len(df0)}', color="red", alpha=0.05)
 
             plt.xlabel(f'Proportion of persons that answered {question}')
-            plt.ylabel('MPS')
-            plt.title(f'Linear Regression of MPS and question {question}')
+            plt.ylabel('Trust/Confidence')
+            plt.title(f'Linear Regression of trust/confidence and question {question}')
             plt.legend()
 
             age_count = 0
 
+            ax2 = plt.subplot(3, 1, 2, sharex=ax1)
             for age in ages:
                 df_an = df_a[df_a["q136r"] == age].copy()
                 # print(df_an)
 
-                df_an['proportion_yes'] = df_an[question] / df_an['total respondents']
+                df_an['proportion_yes'] = df_an[question] / df_an['total']
                 df_an = df_an[df_an['proportion_yes'] > 0].copy()
                 X = df_an[['proportion_yes']]
-                y = df_an['proportion']
+                y = df_an['q61']
 
                 # Create and fit the model
                 try:
@@ -99,7 +100,7 @@ def make_best_linear_regressions(df: pd.DataFrame, df_a: pd.DataFrame, df_r: pd.
                 y_pred = model.predict(X)
                 R_squared = model.score(X, y)
 
-                plt.subplot(3, 1, 2)
+                # ax2 = plt.subplot(3, 1, 2, sharex=ax1)
 
                 if len(df_an) > 3 and R_squared > 0.7:
                     # plt.plot(X, y_pred, label=f'Regression line {age}, {R_squared:.2f}')
@@ -116,8 +117,8 @@ def make_best_linear_regressions(df: pd.DataFrame, df_a: pd.DataFrame, df_r: pd.
             #
             # if show:
                 plt.xlabel(f'Proportion of persons that answered {question}')
-                plt.ylabel('MPS')
-                plt.title(f'Linear Regression of MPS and question {question}')
+                plt.ylabel('Average answer to q61 (0 - very poor up to 1 - excellent)')
+                plt.title(f'Linear Regression of q61 and question {question}')
                 plt.legend()
             #     plt.show()
             # plt.close("all")
@@ -128,10 +129,10 @@ def make_best_linear_regressions(df: pd.DataFrame, df_a: pd.DataFrame, df_r: pd.
                 df_rn = df_r[df_r["nq147r"] == race].copy()
                 # print(df_an)
 
-                df_rn['proportion_yes'] = df_rn[question] / df_rn['total respondents']
+                df_rn['proportion_yes'] = df_rn[question] / df_rn['total']
                 df_rn = df_rn[df_rn['proportion_yes'] > 0].copy()
                 X = df_rn[['proportion_yes']]
-                y = df_rn['proportion']
+                y = df_rn['q61']
 
                 # Create and fit the model
                 try:
@@ -148,7 +149,7 @@ def make_best_linear_regressions(df: pd.DataFrame, df_a: pd.DataFrame, df_r: pd.
                 R_squared = model.score(X, y)
 
 
-                plt.subplot(3, 1, 3)
+                ax3 = plt.subplot(3, 1, 3, sharex=ax1, sharey=ax2)
 
                 if len(df_rn) > 3 and R_squared > 0.7:
                     # plt.plot(X, y_pred, label=f'Regression line {age}, {R_squared:.2f}')
@@ -166,8 +167,8 @@ def make_best_linear_regressions(df: pd.DataFrame, df_a: pd.DataFrame, df_r: pd.
 
             if show or show_race or show_age:
                 plt.xlabel(f'Proportion of persons that answered {question}')
-                plt.ylabel('MPS')
-                plt.title(f'Linear Regression of MPS and question {question}')
+                plt.ylabel('Average answer to q61 (0 - very poor up to 1 - excellent)')
+                plt.title(f'Linear Regression of q61 and question {question}')
                 plt.legend()
                 # plt.show()
                 # plt.figure(figsize=(12, 18))
@@ -211,30 +212,32 @@ if __name__ == "__main__":
     df["month"] = df.apply(lambda row: month_to_quartile(row["month"]), axis=1)
     df = df.groupby(["borough", "month"]).sum()
 
-    query = """SELECT * FROM PAS_questions_age_cleaned"""
+    query = """SELECT * FROM PAS_questions_age_q61_cleaned"""
     df_age = pd.read_sql_query(query, conn_clean)
     df_age["month"] = df_age.apply(lambda row: month_to_quartile(row["month"]), axis=1)
     df_age = df_age.groupby(["q136r", "borough", "month"]).sum()
+    df_age["q61"] = df_age["q61"] / df_age["total"]
     df_age = df_age.reset_index()
     df_age = pd.merge(df_age, df_borough, on=["borough", "month"], how="inner")
     # df_age = df_age.reset_index()
-    df_age['total respondents'] = df_age.iloc[:, 3:10].sum(axis=1)
+    # df_age['total respondents'] = df_age.iloc[:, 3:10].sum(axis=1)
 
-    query = """SELECT * FROM PAS_questions_race_cleaned"""
+    query = """SELECT * FROM PAS_questions_race_q61_cleaned"""
     df_race = pd.read_sql_query(query, conn_clean)
     df_race["month"] = df_race.apply(lambda row: month_to_quartile(row["month"]), axis=1)
     df_race = df_race.groupby(["nq147r", "borough", "month"]).sum()
+    df_race["q61"] = df_race["q61"] / df_race["total"]
     df_race = df_race.reset_index()
     df_race = pd.merge(df_race, df_borough, on=["borough", "month"], how="inner")
     # df_race = df_race.reset_index()
-    df_race['total respondents'] = df_race.iloc[:, 3:10].sum(axis=1)
+    # df_race['total respondents'] = df_race.iloc[:, 3:10].sum(axis=1)
 
     query = """SELECT DISTINCT borough FROM PAS_Borough"""
     boroughs = pd.read_sql_query(query, conn)["borough"].to_list()
 
     df = pd.merge(df, df_borough, on=["borough", "month"], how="inner")
     # print(df)
-    df['total respondents'] = df.iloc[:, 2:10].sum(axis=1)
+    # df['total respondents'] = df.iloc[:, 2:10].sum(axis=1)
 
     column_sums = df[df.columns[2:]].sum()
     columns_to_drop = column_sums[column_sums < 1000].index
