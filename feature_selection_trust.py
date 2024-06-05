@@ -10,7 +10,6 @@ from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
 
 
-
 def get_importances(model_features: list) -> list:
     """
     Creates a list in descending order of feature names and corresponding feature values of a Decision Tree model.
@@ -61,7 +60,7 @@ def make_linear_regression(question: str, show: bool):
     df_survey_cleaned['proportion_yes'] = df_survey_cleaned[question] / df_survey_cleaned['total']
     df = df_survey_cleaned[df_survey_cleaned['proportion_yes'] > 0]
     X = df[['proportion_yes']]
-    y = df[['mps']]
+    y = df[['proportion']]
 
     # Create model
     model = LinearRegression()
@@ -80,8 +79,8 @@ def make_linear_regression(question: str, show: bool):
         # Showing regression plot
         # Add labels and legend
         plt.xlabel(f'Proportion of persons that answered {question}')
-        plt.ylabel('MPS')
-        plt.title(f'Linear Regression of MPS and question {question}')
+        plt.ylabel('Confidence')
+        plt.title(f'Linear Regression of Confidence and question {question}')
         plt.legend()
         plt.show()
 
@@ -95,7 +94,7 @@ def make_best_linear_regressions(questions: list):
         df = df_survey_cleaned[df_survey_cleaned['proportion_yes'] > 0]
 
         X = df[['proportion_yes']]
-        y = df['mps']
+        y = df['proportion']
 
         # Create and fit the model
         model = LinearRegression()
@@ -110,8 +109,8 @@ def make_best_linear_regressions(questions: list):
             plt.scatter(X, y, color='blue', label='Original data')
             plt.plot(X, y_pred, color='red', label='Regression line')
             plt.xlabel(f'Proportion of persons that answered {question}')
-            plt.ylabel('MPS')
-            plt.title(f'Linear Regression of MPS and question {question}')
+            plt.ylabel('Confidence')
+            plt.title(f'Linear Regression of Confidence and question {question}')
             plt.legend()
             plt.show()
 
@@ -135,7 +134,7 @@ def make_more_linear_regressions(questions, rows, columns, filename):
         df_survey_cleaned['proportion_yes'] = df_survey_cleaned[question] / df_survey_cleaned['total']
         df = df_survey_cleaned[df_survey_cleaned['proportion_yes'] > 0]
         X = df[['proportion_yes']]
-        y = df[['mps']]
+        y = df[['proportion']]
 
         # Create model
         model = LinearRegression()
@@ -150,8 +149,8 @@ def make_more_linear_regressions(questions, rows, columns, filename):
 
         # Add labels and legend
         ax.set_xlabel(f'Proportion of persons that answered {question}')
-        ax.set_ylabel('MPS')
-        ax.set_title(f'Linear Regression of MPS and question {question}')
+        ax.set_ylabel('Confidence')
+        ax.set_title(f'Linear Regression of Confidence and question {question}')
         ax.legend()
 
     # Adjust layout
@@ -168,7 +167,7 @@ if __name__ == "__main__":
     cnx_cleaned = sqlite3.connect('data/cleaned_police_data.db')
 
     # Group by measure since the trust is measured per measure
-    df_PAS_Borough = pd.read_sql_query("SELECT * FROM PAS_Borough", cnx)
+    df_PAS_Borough = pd.read_sql_query("""SELECT * FROM PAS_Borough WHERE measure = 'trust mps'""", cnx)
     df_stop_and_search = pd.read_sql_query("SELECT * FROM stop_and_search GROUP BY month, borough", cnx)
 
     df_merged = pd.merge(df_PAS_Borough, df_stop_and_search, on=['borough', 'month'], how='inner')
@@ -196,7 +195,7 @@ if __name__ == "__main__":
                                                                'officer_defined_ethnicity', 'object_of_search', 'outcome'])
 
     # Define X (the values we use to predict y) and define y (= trust level)
-    X, y = df_merged.iloc[:, 7:-1], df_merged['mps']
+    X, y = df_merged.iloc[:, 7:-1], df_merged['proportion']
 
     # Create and fit the model
     model = DecisionTreeRegressor()   # Using random_state so that we can reproduce results, since the features are always randomly permuted at each split
@@ -276,11 +275,11 @@ if __name__ == "__main__":
     # Merge to two dataframes so that we have the trust together with the questions
     df_PAS_Borough['month'] = pd.to_datetime(df_PAS_Borough['month'])
     df_top_questions = pd.merge(df_top_questions,
-                                df_PAS_Borough[['borough', 'month', 'mps']].groupby(["borough", "month"]).mean(),
+                                df_PAS_Borough[['borough', 'month', 'proportion']].groupby(["borough", "month"]).mean(),
                                 on=['borough', 'month'])
 
     # Define X (the values we use to predict y) and define y (= trust level)
-    X, y = df_top_questions.iloc[:, 2:-1], df_top_questions['mps']
+    X, y = df_top_questions.iloc[:, 2:-1], df_top_questions['proportion']
     # TO DO: only keep columns that have a sum value of >= x
     counts = X.sum()
     filtered_columns = counts[counts > 10000].index   # Questions that have been answered at least x times to prevent overfitting
@@ -374,6 +373,10 @@ if __name__ == "__main__":
     # Create Linear Regression model to check decision tree results
     df_survey_cleaned['month'] = pd.to_datetime(df_survey_cleaned['month'])   # convert to datetime so that we can join two datetime columns with each other
 
+    # Get total number of respondents (since question 1 is always asked, we can sum the values of the dummy variables of
+    # question 1 to get the total number of respondents)
+    df_survey_cleaned['total'] = df_survey_cleaned.iloc[:, 2:10].sum(axis=1)
+
     df_survey_cleaned.drop(columns=['borough'],
                            inplace=True)   # dropping borough column since MPS is the same for every borough
 
@@ -385,7 +388,7 @@ if __name__ == "__main__":
 
     # Grouping and joining so that we can use MPS
     df_survey_cleaned = pd.merge(df_survey_cleaned.groupby(['month']).sum(),
-                                 df_PAS_Borough[['month', 'mps']].groupby(['month']).mean(),
+                                 df_PAS_Borough[['month', 'proportion']].groupby(['month']).mean(),
                                  on=['month'])
 
     # Question q39a_2: To what extent do you think knife crime is a problem in this area? By knife crime I mean people
@@ -500,6 +503,3 @@ if __name__ == "__main__":
     report_questions = ['a120_strongly agree', 'q66_not often enough', 'q79g_1 not at all well', 'q15_very worried',
                         'q15_not at all worried', 'q62f_tend to disagree']
     #make_more_linear_regressions(report_questions, 3, 2, 'report_findings_LR')
-
-    make_linear_regression('nq135bd_strongly agree', True)
-
