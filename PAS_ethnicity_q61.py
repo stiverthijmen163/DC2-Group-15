@@ -1,7 +1,7 @@
 import pandas as pd
 import sqlite3
 import matplotlib
-# matplotlib.use('Agg')
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from sklearn.exceptions import UndefinedMetricWarning
 from sklearn.linear_model import LinearRegression
@@ -12,7 +12,7 @@ from sklearn.model_selection import train_test_split
 warnings.filterwarnings("ignore", category=UndefinedMetricWarning)
 warnings.filterwarnings("ignore", category=matplotlib.MatplotlibDeprecationWarning)
 
-def make_best_linear_regressions(df: pd.DataFrame, df_a: pd.DataFrame, df_r: pd.DataFrame, questions: list, borough: str):
+def make_best_linear_regressions(df: pd.DataFrame, df_a: pd.DataFrame, df_r: pd.DataFrame, questions: list, borough: str, t_or_c: str):
     """
     Plots the questions with the highest R^2 of the cleaned survey data set
     :param questions: list consisting the questions of the cleaned survey data set
@@ -70,7 +70,7 @@ def make_best_linear_regressions(df: pd.DataFrame, df_a: pd.DataFrame, df_r: pd.
                 plt.plot(X, y_pred, label=f'Regression line {R_squared:.2f}, {len(df0)}', color="red", alpha=0.05)
 
             plt.xlabel(f'Proportion of persons that answered {question}')
-            plt.ylabel('Trust/Confidence')
+            plt.ylabel(t_or_c.capitalize())
             plt.title(f'Linear Regression of trust/confidence and question {question}')
             plt.legend()
 
@@ -173,10 +173,9 @@ def make_best_linear_regressions(df: pd.DataFrame, df_a: pd.DataFrame, df_r: pd.
                 # plt.show()
                 # plt.figure(figsize=(12, 18))
                 question = question.replace('/', ' or ')
-                plt.savefig(f"artifacts/{borough}_{question}.png")
+                plt.savefig(f"artifacts/{t_or_c}/{borough}_{question}.png")
                 # plt.figure(figsize=(12, 36))
             plt.close("all")
-
 
 
 def month_to_quartile(month: str) -> str:
@@ -198,13 +197,27 @@ def month_to_quartile(month: str) -> str:
     return f"{month[:4]}-{q}"
 
 
-if __name__ == "__main__":
+def full_process_lin_reg_boroughs(trust_or_conf: bool):
     conn = sqlite3.connect("data/police_data.db")
     conn_clean = sqlite3.connect("data/cleaned_police_data.db")
 
-    query = """SELECT borough, month, AVG(proportion) AS proportion
-    FROM PAS_Borough
-    GROUP BY borough, month"""
+    if trust_or_conf:  # trust
+        query = """SELECT borough, month, AVG(proportion) AS proportion
+        FROM PAS_Borough
+        where measure == 'trust mps'
+        GROUP BY borough, month"""
+
+        t_or_c = "trust"
+        q = ["q3k_strongly disagree", "q13_very worried", "q15_very worried", "q39a_2_major problem", "q39a_2_minor problem", "q39a_2_not a problem at all", "nq43_major problem", "nq43_not a problem at all", "q60_good", "q60_very poor", "q61_good", "q61_poor", "q61_very poor", "q62a_strongly disagree", "q62a_tend to agree", "q66_about right", "q66_not often enough", "q79b_3", "q79d_1 not at all well", "q79d_2", "q79g_1 not at all well", "q79j_don't know", "sq79dc_heathrow or london city airport (but not gatwick)", "nq135a_news_gun/knife crime"]
+    else:  # confidence
+        query = """SELECT borough, month, AVG(proportion) AS proportion
+        FROM PAS_Borough
+        where measure == '"good job" local'
+        GROUP BY borough, month"""
+
+        t_or_c = "confidence"
+        q = ["q15_very worried", "q39a_2_major problem", "q60_very poor", "q61_poor", "q62a_strongly disagree", "q62f_tend to disagree", "q79d_2", "q79g_1 not at all well", "q79i_don't know", "q79j_don't know", "sq79b_strongly agree", "sq79dc_heathrow or london city airport (but not gatwick)", "a120_tend to agree", "q132nn_social media (e.g. facebook/twitter/blogs)"]
+
     df_borough = pd.read_sql_query(query, conn)
 
     query = """SELECT * FROM PAS_questions_cleaned"""
@@ -219,8 +232,6 @@ if __name__ == "__main__":
     df_age["q61"] = df_age["q61"] / df_age["total"]
     df_age = df_age.reset_index()
     df_age = pd.merge(df_age, df_borough, on=["borough", "month"], how="inner")
-    # df_age = df_age.reset_index()
-    # df_age['total respondents'] = df_age.iloc[:, 3:10].sum(axis=1)
 
     query = """SELECT * FROM PAS_questions_race_q61_cleaned"""
     df_race = pd.read_sql_query(query, conn_clean)
@@ -229,15 +240,11 @@ if __name__ == "__main__":
     df_race["q61"] = df_race["q61"] / df_race["total"]
     df_race = df_race.reset_index()
     df_race = pd.merge(df_race, df_borough, on=["borough", "month"], how="inner")
-    # df_race = df_race.reset_index()
-    # df_race['total respondents'] = df_race.iloc[:, 3:10].sum(axis=1)
 
     query = """SELECT DISTINCT borough FROM PAS_Borough"""
     boroughs = pd.read_sql_query(query, conn)["borough"].to_list()
 
     df = pd.merge(df, df_borough, on=["borough", "month"], how="inner")
-    # print(df)
-    # df['total respondents'] = df.iloc[:, 2:10].sum(axis=1)
 
     column_sums = df[df.columns[2:]].sum()
     columns_to_drop = column_sums[column_sums < 1000].index
@@ -251,11 +258,77 @@ if __name__ == "__main__":
         df_b = df[df["borough"] == borough].copy()
         df_age_b = df_age[df_age["borough"] == borough].copy()
         df_race_b = df_race[df_race["borough"] == borough].copy()
-        make_best_linear_regressions(df_b, df_age_b, df_race_b, df_b.columns[2:], borough)
-
-
-
-
+        # make_best_linear_regressions(df_b, df_age_b, df_race_b, df_b.columns[2:], borough)
+        make_best_linear_regressions(df_b, df_age_b, df_race_b, q, borough, t_or_c)
 
     conn.close()
     conn_clean.close()
+
+
+if __name__ == "__main__":
+    # trust
+    full_process_lin_reg_boroughs(True)
+
+    # confidence
+    full_process_lin_reg_boroughs(False)
+
+    # conn = sqlite3.connect("data/police_data.db")
+    # conn_clean = sqlite3.connect("data/cleaned_police_data.db")
+    #
+    # query = """SELECT borough, month, AVG(proportion) AS proportion
+    # FROM PAS_Borough
+    # GROUP BY borough, month"""
+    # df_borough = pd.read_sql_query(query, conn)
+    #
+    # query = """SELECT * FROM PAS_questions_cleaned"""
+    # df = pd.read_sql_query(query, conn_clean)
+    # df["month"] = df.apply(lambda row: month_to_quartile(row["month"]), axis=1)
+    # df = df.groupby(["borough", "month"]).sum()
+    #
+    # query = """SELECT * FROM PAS_questions_age_q61_cleaned"""
+    # df_age = pd.read_sql_query(query, conn_clean)
+    # df_age["month"] = df_age.apply(lambda row: month_to_quartile(row["month"]), axis=1)
+    # df_age = df_age.groupby(["q136r", "borough", "month"]).sum()
+    # df_age["q61"] = df_age["q61"] / df_age["total"]
+    # df_age = df_age.reset_index()
+    # df_age = pd.merge(df_age, df_borough, on=["borough", "month"], how="inner")
+    # # df_age = df_age.reset_index()
+    # # df_age['total respondents'] = df_age.iloc[:, 3:10].sum(axis=1)
+    #
+    # query = """SELECT * FROM PAS_questions_race_q61_cleaned"""
+    # df_race = pd.read_sql_query(query, conn_clean)
+    # df_race["month"] = df_race.apply(lambda row: month_to_quartile(row["month"]), axis=1)
+    # df_race = df_race.groupby(["nq147r", "borough", "month"]).sum()
+    # df_race["q61"] = df_race["q61"] / df_race["total"]
+    # df_race = df_race.reset_index()
+    # df_race = pd.merge(df_race, df_borough, on=["borough", "month"], how="inner")
+    # # df_race = df_race.reset_index()
+    # # df_race['total respondents'] = df_race.iloc[:, 3:10].sum(axis=1)
+    #
+    # query = """SELECT DISTINCT borough FROM PAS_Borough"""
+    # boroughs = pd.read_sql_query(query, conn)["borough"].to_list()
+    #
+    # df = pd.merge(df, df_borough, on=["borough", "month"], how="inner")
+    # # print(df)
+    # # df['total respondents'] = df.iloc[:, 2:10].sum(axis=1)
+    #
+    # column_sums = df[df.columns[2:]].sum()
+    # columns_to_drop = column_sums[column_sums < 1000].index
+    #
+    # if "proportion" in columns_to_drop:
+    #     columns_to_drop = columns_to_drop.difference(["proportion"])
+    # df = df.drop(columns=columns_to_drop)
+    #
+    # for borough in boroughs:
+    #     print(borough)
+    #     df_b = df[df["borough"] == borough].copy()
+    #     df_age_b = df_age[df_age["borough"] == borough].copy()
+    #     df_race_b = df_race[df_race["borough"] == borough].copy()
+    #     make_best_linear_regressions(df_b, df_age_b, df_race_b, df_b.columns[2:], borough)
+    #
+    #
+    #
+    #
+    #
+    # conn.close()
+    # conn_clean.close()
