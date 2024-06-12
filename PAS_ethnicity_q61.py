@@ -71,7 +71,7 @@ def make_best_linear_regressions(df: pd.DataFrame, df_a: pd.DataFrame, df_r: pd.
 
             plt.xlabel(f'Proportion of persons that answered {question}')
             plt.ylabel(t_or_c.capitalize())
-            plt.title(f'Linear Regression of trust/confidence and question {question}')
+            plt.title(f'Linear Regression of {t_or_c} and question {question}')
             plt.legend()
 
             age_count = 0
@@ -169,10 +169,12 @@ def make_best_linear_regressions(df: pd.DataFrame, df_a: pd.DataFrame, df_r: pd.
                 plt.xlabel(f'Proportion of persons that answered {question}')
                 plt.ylabel('Average answer to q61 (0 - very poor up to 1 - excellent)')
                 plt.title(f'Linear Regression of q61 and question {question}')
+                plt.suptitle(f"{t_or_c} in {borough} for question {question}\n", weight='bold')
                 plt.legend()
                 # plt.show()
                 # plt.figure(figsize=(12, 18))
                 question = question.replace('/', ' or ')
+                plt.tight_layout()
                 plt.savefig(f"artifacts/{t_or_c}/{borough}_{question}.png")
                 # plt.figure(figsize=(12, 36))
             plt.close("all")
