@@ -158,7 +158,7 @@ def make_more_linear_regressions(questions, rows, columns, filename):
     plt.show()
 
     # Shave the plot
-    plt.savefig(filename, type='svg')
+    plt.savefig(filename, format='svg')
 
 
 if __name__ == "__main__":
@@ -440,14 +440,14 @@ if __name__ == "__main__":
     make_linear_regression('q150r_non-heterosexual', False)
 
     # Question nq149r: What is your religion, even if you are not currently practicing?
-    make_linear_regression('nq149r_christian', True)
+    make_linear_regression('nq149r_christian', False)
     make_linear_regression('nq149r_muslim', False)
-    make_linear_regression('nq149r_hindu', True)
+    make_linear_regression('nq149r_hindu', False)
     make_linear_regression('nq149r_no religion', False)
 
     # Question xq135: What is your sex?
-    make_linear_regression('xq135r_male', True)
-    make_linear_regression('xq135r_female', True)
+    make_linear_regression('xq135r_male', False)
+    make_linear_regression('xq135r_female', False)
 
     # Question nq135bd: To what extent do you agree or disagree with the following statements:
     # The Metropolitan Police Service is an organisation that I can trust
@@ -500,7 +500,10 @@ if __name__ == "__main__":
     make_best_linear_regressions(questions)
 
     # plot subplots for findings section in paper
-    report_questions = ['a120_strongly agree', 'q66_not often enough', 'q79g_1 not at all well', 'q15_very worried',
-                        'q15_not at all worried', 'q62f_tend to disagree']
-    #make_more_linear_regressions(report_questions, 3, 2, 'report_findings_LR')
+    report_questions = ['q15_very worried', 'q62a_strongly disagree']
+    #make_more_linear_regressions(report_questions, 2, 1, 'report_findings_LR_confidence')
+
+    make_linear_regression('q15_very worried', True)
+    make_linear_regression('q62a_strongly disagree', True)
+
 

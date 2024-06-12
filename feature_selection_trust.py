@@ -79,8 +79,8 @@ def make_linear_regression(question: str, show: bool):
         # Showing regression plot
         # Add labels and legend
         plt.xlabel(f'Proportion of persons that answered {question}')
-        plt.ylabel('Confidence')
-        plt.title(f'Linear Regression of Confidence and question {question}')
+        plt.ylabel('Trust')
+        plt.title(f'Linear Regression of Trust and question {question}')
         plt.legend()
         plt.show()
 
@@ -109,8 +109,8 @@ def make_best_linear_regressions(questions: list):
             plt.scatter(X, y, color='blue', label='Original data')
             plt.plot(X, y_pred, color='red', label='Regression line')
             plt.xlabel(f'Proportion of persons that answered {question}')
-            plt.ylabel('Confidence')
-            plt.title(f'Linear Regression of Confidence and question {question}')
+            plt.ylabel('Trust')
+            plt.title(f'Linear Regression of Trust and question {question}')
             plt.legend()
             plt.show()
 
@@ -149,8 +149,8 @@ def make_more_linear_regressions(questions, rows, columns, filename):
 
         # Add labels and legend
         ax.set_xlabel(f'Proportion of persons that answered {question}')
-        ax.set_ylabel('Confidence')
-        ax.set_title(f'Linear Regression of Confidence and question {question}')
+        ax.set_ylabel('Trust')
+        ax.set_title(f'Linear Regression of Trust and question {question}')
         ax.legend()
 
     # Adjust layout
@@ -158,7 +158,7 @@ def make_more_linear_regressions(questions, rows, columns, filename):
     plt.show()
 
     # Shave the plot
-    plt.savefig(filename, type='svg')
+    plt.savefig(filename, format='svg')
 
 
 if __name__ == "__main__":
@@ -500,6 +500,10 @@ if __name__ == "__main__":
     make_best_linear_regressions(questions)
 
     # plot subplots for findings section in paper
-    report_questions = ['a120_strongly agree', 'q66_not often enough', 'q79g_1 not at all well', 'q15_very worried',
-                        'q15_not at all worried', 'q62f_tend to disagree']
-    #make_more_linear_regressions(report_questions, 3, 2, 'report_findings_LR')
+    report_questions = ['nq135a_news_gun/knife crime', 'nq135a_newaf_theft', 'q65_never', 'q65_at least daily']
+    #make_more_linear_regressions(report_questions, 2, 2, 'report_findings_LR_trust')
+
+    make_linear_regression('nq135a_news_gun/knife crime', True)
+    make_linear_regression('nq135a_newaf_theft', True)
+    make_linear_regression('q65_never', True)
+    make_linear_regression('q65_at least daily', True)
