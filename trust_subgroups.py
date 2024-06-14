@@ -53,4 +53,31 @@ if __name__ == "__main__":
     df_grouped = df_grouped[df_grouped['ethnicity'] != 'Unknown']
     print(df_grouped)
 
+    # Do the same for question 65 (patrolling) but then grouped by borough and not age rage/ethnicity
+    df_survey_with_dummies = pd.get_dummies(df_survey, columns=['q65'], prefix='q65')
+
+    # Group by borough
+    df_grouped = df_survey_with_dummies.groupby(['borough']).sum().reset_index()
+    df_grouped['total'] = df_grouped[['q65_at least daily', 'q65_at least weekly', 'q65_at least fortnightly',
+                                      'q65_at least monthly', 'q65_less often', 'q65_never']].sum(axis=1)
+
+    # Define the trust values for each category
+    trust_values = {
+        'q65_at least daily': 1.00,
+        'q65_at least weekly': 0.80,
+        'q65_at least fortnightly': 0.60,
+        'q65_at least monthly': 0.40,
+        'q65_less often': 0.20,
+        'q65_never': 0.00
+    }
+
+    # Calculate the average trust level
+    df_grouped['average_trust'] = sum(df_grouped[col] * value for col, value in trust_values.items()
+                                      ) / df_grouped['total']
+
+    # rename columns and order by average_trust and drop unknown ethnicity
+    df_grouped = df_grouped.sort_values(by='average_trust', ascending=True)
+    print(df_grouped)
+
+
     cnx.close()
