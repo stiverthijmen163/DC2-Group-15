@@ -172,7 +172,8 @@ def make_best_linear_regressions(df: pd.DataFrame, df_a: pd.DataFrame, df_r: pd.
 
             # save figure if at least one of the plots if worth showing
             if show or show_race or show_age:
-                plt.suptitle(f"{t_or_c} in {borough} for question {question}\n", weight='bold')
+                # capitalize borough
+                plt.suptitle(f"{t_or_c} in '{' '.join([(word.capitalize() if word.lower() != 'and' else word.lower()) for word in borough.split()])}' for question {question}\n", weight='bold')
 
                 # convert question to fit path
                 question = question.replace('/', ' or ')
