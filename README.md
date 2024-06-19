@@ -12,6 +12,15 @@ The following datasets should be downloaded yourself and placed in the `data` fo
 ## Before you start
 This github provides the user with both .py and jupiter notebook files. To run the .py files, all necessary packages are in the `requirements.txt` file.
 
+## Prerequisites
+Ensure all required datasets are downloaded and placed in the `data` folder as described.
+
+## Setting Up the Environment
+Install the necessary packages from `requirements.txt`:
+```bash
+pip install -r requirements.txt
+```
+
 ## loading and cleaning the data
 Run the following files in order:
 - `load_data_to_SQL.py`
@@ -46,3 +55,10 @@ Please read this document carefully as it has been filled out with important inf
 ## Pulling:
 1. Start a new terminal session inside Jupyter Lab if noone is active (new launcher tab, next to your python tab)
 2. Type: git pull origin master
+
+# Jupyter Notebooks
+## Ethnicity, Age, Gender Bias in Stop and Search Practices
+The ```S&S_Bias.ipynb``` analyzes biases in stop and search practices based on ethnicity, age, and gender. It involves data loading, cleaning, and preprocessing steps, followed by statistical analysis to identify significant differences in stop and search rates across different demographic groups.
+
+## Impact and Bias in Stop and Search Practices
+The ```S&S_Impact_and_BIAS.ipynb``` extends the analysis of stop and search practices by examining the impact of these practices on different ethnic groups over time. It includes data integration, preprocessing, and statistical modeling to explore the relationship between stop and search rates and various demographic factors.
