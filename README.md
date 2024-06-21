@@ -65,3 +65,6 @@ The ```S&S_Impact_and_BIAS.ipynb``` extends the analysis of stop and search prac
 
 ## Specific Question Outcomes and Impact on Trust/Confidence
 The ```feature_selection_trust.py``` and ```feature_selection_confidence.py``` check which specific questions of the PAS survey data have the biggest influence on trust and confidence respectively. First, several variants of decision trees were used to calculate feature importance. Secondly, linear regression was used to see which specific question outcomes could be used to best predict trust and/or confidence.
+
+## Trust subgroups
+The ```trust_subgroups.py``` calculates the trust of specific subgroups (ethnicity and age). Question 61 was used as a trust indicator, which was first converted to a numerical scale instead of categorical.
