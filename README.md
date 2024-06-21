@@ -62,3 +62,6 @@ The ```S&S_Bias.ipynb``` analyzes biases in stop and search practices based on e
 
 ## Impact and Bias in Stop and Search Practices
 The ```S&S_Impact_and_BIAS.ipynb``` extends the analysis of stop and search practices by examining the impact of these practices on different ethnic groups over time. It includes data integration, preprocessing, and statistical modeling to explore the relationship between stop and search rates and various demographic factors.
+
+## Specific Question Outcomes and Impact on Trust/Confidence
+The ```feature_selection_trust.py``` and ```feature_selection_confidence.py``` check which specific questions of the PAS survey data have the biggest influence on trust and confidence respectively. First, several variants of decision trees were used to calculate feature importance. Secondly, linear regression was used to see which specific question outcomes could be used to best predict trust and/or confidence.
