@@ -1,10 +1,8 @@
 # Data-Challenge-2-code
 
 ## The data
-The following datasets have been changed or collected by hand and therefore are already in this github so you do not have to download them:
-- PAS question dataset (No link available)
-
 The following datasets should be downloaded yourself and placed in the `data` folder:
+- PAS question dataset (https://drive.google.com/drive/folders/1yYYcDjewGfgjHnx6hYwR48KmugfkpaCH?usp=sharing)
 - PAS survey data (https://data.london.gov.uk/dataset/mopac-surveys, the .xlsx file)
 - Ethnic groups by Borough (https://data.london.gov.uk/dataset/ethnic-groups-borough)
 - The UK police data repository (https://data.police.uk/data/archive/), put this in the folder `MPS` within the `data` folder.
@@ -38,7 +36,7 @@ Please read this document carefully as it has been filled out with important inf
 
 ## Starting Jupyter Lab (Optional if you would like to use notebooks! Not useful when you work with .py files, use VS code or Pycharm instead)
 1. Open Anaconda and launch Jupyter Lab
-2. When Jupyter Lab is launches, nagivate the the cloned project
+2. When Jupyter Lab is launches, nagivate to the cloned project
 
 ## Pusing from Jupyter Lab when no new files are added*
 1. Start a new terminal session inside Jupyter Lab (new launcher tab, next to your python tab)
