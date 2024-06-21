@@ -68,3 +68,6 @@ The ```feature_selection_trust.py``` and ```feature_selection_confidence.py``` c
 
 ## Trust subgroups
 The ```trust_subgroups.py``` calculates the trust of specific subgroups (ethnicity and age). Question 61 was used as a trust indicator, which was first converted to a numerical scale instead of categorical.
+
+## Trust/Confidence by borough and age range/race impacted by specific questions
+The `PAS_ethnicity_q61.py` check each question from ```feature_selection_trust.py``` and ```feature_selection_confidence.py``` whether they have a strong correlation with q61 based on borough, age range and race.
