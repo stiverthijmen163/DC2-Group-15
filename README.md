@@ -3,11 +3,11 @@
 ## The data
 The following datasets have been changed or collected by hand and therefore are already in this github so you do not have to download them:
 - PAS question dataset (No link available)
-- The UK police data repository (https://data.police.uk/data/archive/)
 
 The following datasets should be downloaded yourself and placed in the `data` folder:
 - PAS survey data (https://data.london.gov.uk/dataset/mopac-surveys, the .xlsx file)
 - Ethnic groups by Borough (https://data.london.gov.uk/dataset/ethnic-groups-borough)
+- The UK police data repository (https://data.police.uk/data/archive/), put this in the folder `MPS` within the `data` folder.
 
 ## Before you start
 This github provides the user with both .py and jupiter notebook files. To run the .py files, all necessary packages are in the `requirements.txt` file.
